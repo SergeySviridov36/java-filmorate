@@ -42,7 +42,7 @@ public class UserController {
             if (user.getId() == 0 || !usersMap.containsKey(user.getId())) {
                 throw new ValidationException("Ошибка данных.");
             }
-            if (user.getName()==null || user.getName().isBlank()) {
+            if (user.getName() == null || user.getName().isBlank()) {
                 String name = usersMap.get(user.getId()).getName();
                 user.setName(name);
             }
@@ -50,7 +50,7 @@ public class UserController {
             log.debug("Обновлены данные пользователя: {}", user.getName());
             return ResponseEntity.ok(user);
         } catch (ValidationException exception) {
-            log.debug(exception.getMessage(),exception);
+            log.debug(exception.getMessage(), exception);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(user);
         }
     }

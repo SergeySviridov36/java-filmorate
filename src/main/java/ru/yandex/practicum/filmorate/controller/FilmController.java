@@ -20,7 +20,7 @@ import java.util.Map;
 @Validated
 public class FilmController {
 
-    private int createid;
+    private int createId;
     private final LocalDate data = LocalDate.of(1895, 12, 28);
 
     private final Map<Integer, Film> filmMap = new HashMap<>();
@@ -31,13 +31,13 @@ public class FilmController {
             if (film.getReleaseDate().isBefore(data)) {
                 throw new ValidationException("Ошибка данных.");
             }
-            ++createid;
-            film.setId(createid);
+            ++createId;
+            film.setId(createId);
             filmMap.put(film.getId(), film);
             log.debug("Добавлен фильм: {}", film.getName());
             return ResponseEntity.ok(film);
         } catch (ValidationException exception) {
-            log.debug(exception.getMessage(),exception);
+            log.debug(exception.getMessage(), exception);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(film);
         }
     }
@@ -53,7 +53,7 @@ public class FilmController {
             log.debug("Обновлен фильм: {}", film.getName());
             return ResponseEntity.ok(film);
         } catch (ValidationException exception) {
-            log.debug(exception.getMessage(),exception);
+            log.debug(exception.getMessage(), exception);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(film);
         }
     }
