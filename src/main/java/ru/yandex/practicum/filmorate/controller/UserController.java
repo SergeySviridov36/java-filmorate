@@ -24,7 +24,7 @@ public class UserController {
     private final Map<Integer, User> usersMap = new HashMap<>();
 
     @PostMapping
-    public ResponseEntity<User> createUser(@Valid @RequestBody User user) {
+    public ResponseEntity<User> create(@Valid @RequestBody User user) {
 
         if (user.getName() == null || user.getName().isBlank()) {
             user.setName(user.getLogin());
@@ -37,16 +37,17 @@ public class UserController {
     }
 
     @PutMapping
-    public ResponseEntity<User> updateUser(@Valid @RequestBody User user) {
+    public ResponseEntity<User> update(@Valid @RequestBody User user) {
         try {
             if (user.getId() == 0 || !usersMap.containsKey(user.getId())) {
                 throw new ValidationException("Ошибка данных.");
             }
-            if (user.getName().isBlank()) {
-                user.setName(user.getLogin());
+            if (user.getName()==null || user.getName().isBlank()) {
+                String name = usersMap.get(user.getId()).getName();
+                user.setName(name);
             }
             usersMap.put(user.getId(), user);
-            log.debug("Обновлены данные пользователя: {}", user.getLogin());
+            log.debug("Обновлены данные пользователя: {}", user.getName());
             return ResponseEntity.ok(user);
         } catch (ValidationException exception) {
             log.debug(exception.getMessage(),exception);

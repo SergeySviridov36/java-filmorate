@@ -21,14 +21,14 @@ import java.util.Map;
 public class FilmController {
 
     private int createid;
-    private final LocalDate reliseData = LocalDate.of(1895, 12, 28);
+    private final LocalDate data = LocalDate.of(1895, 12, 28);
 
     private final Map<Integer, Film> filmMap = new HashMap<>();
 
     @PostMapping
-    public ResponseEntity<Film> createFilm(@Valid @RequestBody Film film) {
+    public ResponseEntity<Film> create(@Valid @RequestBody Film film) {
         try {
-            if (film.getReleaseDate().isBefore(reliseData)) {
+            if (film.getReleaseDate().isBefore(data)) {
                 throw new ValidationException("Ошибка данных.");
             }
             ++createid;
@@ -38,14 +38,14 @@ public class FilmController {
             return ResponseEntity.ok(film);
         } catch (ValidationException exception) {
             log.debug(exception.getMessage(),exception);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(film);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(film);
         }
     }
 
     @PutMapping
-    public ResponseEntity<Film> updateFilm(@Valid @RequestBody Film film) {
+    public ResponseEntity<Film> update(@Valid @RequestBody Film film) {
         try {
-            if (film.getId() == 0 || film.getReleaseDate().isBefore(reliseData) ||
+            if (film.getId() == 0 || film.getReleaseDate().isBefore(data) ||
                     !filmMap.containsKey(film.getId())) {
                 throw new ValidationException("Ошибка данных.");
             }
