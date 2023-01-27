@@ -5,14 +5,14 @@ import lombok.*;
 import javax.validation.constraints.*;
 import java.time.LocalDate;
 
-@Setter
 @Getter
+@Setter
 @EqualsAndHashCode
 @AllArgsConstructor
 @NoArgsConstructor
 public class Film {
 
-    private int id;
+    private long id;
     @NotBlank
     private String name;
     @NotBlank

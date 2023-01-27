@@ -20,42 +20,41 @@ import java.util.Map;
 @Validated
 public class FilmController {
 
-    private int createId;
+    private long idFilm;
     private final LocalDate data = LocalDate.of(1895, 12, 28);
+    private final Map<Long, Film> filmMap = new HashMap<>();
 
-    private final Map<Integer, Film> filmMap = new HashMap<>();
+    private void generatorId(Film film){
+        ++idFilm;
+        film.setId(idFilm);
+    }
 
     @PostMapping
     public ResponseEntity<Film> create(@Valid @RequestBody Film film) {
-        try {
+
             if (film.getReleaseDate().isBefore(data)) {
-                throw new ValidationException("Ошибка данных.");
+                log.debug("Ошибка валидации getReleaseDate! : {}",film.getReleaseDate());
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(film);
             }
-            ++createId;
-            film.setId(createId);
+            generatorId(film);
             filmMap.put(film.getId(), film);
             log.debug("Добавлен фильм: {}", film.getName());
             return ResponseEntity.ok(film);
-        } catch (ValidationException exception) {
-            log.debug(exception.getMessage(), exception);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(film);
         }
-    }
+
 
     @PutMapping
     public ResponseEntity<Film> update(@Valid @RequestBody Film film) {
-        try {
+
             if (film.getId() == 0 || film.getReleaseDate().isBefore(data) ||
                     !filmMap.containsKey(film.getId())) {
-                throw new ValidationException("Ошибка данных.");
+                log.debug("Ошибка валидации update Film!: {}, {}, {}",film.getId(),film.getReleaseDate(),data);
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(film);
             }
             filmMap.put(film.getId(), film);
             log.debug("Обновлен фильм: {}", film.getName());
             return ResponseEntity.ok(film);
-        } catch (ValidationException exception) {
-            log.debug(exception.getMessage(), exception);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(film);
-        }
+
     }
 
     @GetMapping

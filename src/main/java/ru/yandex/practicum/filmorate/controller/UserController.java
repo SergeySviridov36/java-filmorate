@@ -19,9 +19,13 @@ import java.util.Map;
 @RequestMapping("/users")
 public class UserController {
 
-    private int createId;
+    private long userId;
+    private final Map<Long, User> usersMap = new HashMap<>();
 
-    private final Map<Integer, User> usersMap = new HashMap<>();
+    private void generatorUserId(User user){
+        ++userId;
+        user.setId(userId);
+    }
 
     @PostMapping
     public ResponseEntity<User> create(@Valid @RequestBody User user) {
@@ -29,8 +33,7 @@ public class UserController {
         if (user.getName() == null || user.getName().isBlank()) {
             user.setName(user.getLogin());
         }
-        ++createId;
-        user.setId(createId);
+        generatorUserId(user);
         usersMap.put(user.getId(), user);
         log.debug("Добавлен пользователь: {}", user.getName());
         return ResponseEntity.ok(user);
@@ -38,9 +41,10 @@ public class UserController {
 
     @PutMapping
     public ResponseEntity<User> update(@Valid @RequestBody User user) {
-        try {
+
             if (user.getId() == 0 || !usersMap.containsKey(user.getId())) {
-                throw new ValidationException("Ошибка данных.");
+                log.debug("Ошибка валидации getId! : {}",user.getId());
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(user);
             }
             if (user.getName() == null || user.getName().isBlank()) {
                 String name = usersMap.get(user.getId()).getName();
@@ -49,10 +53,6 @@ public class UserController {
             usersMap.put(user.getId(), user);
             log.debug("Обновлены данные пользователя: {}", user.getName());
             return ResponseEntity.ok(user);
-        } catch (ValidationException exception) {
-            log.debug(exception.getMessage(), exception);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(user);
-        }
     }
 
     @GetMapping
