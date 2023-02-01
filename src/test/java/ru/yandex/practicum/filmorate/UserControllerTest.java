@@ -76,6 +76,6 @@ public class UserControllerTest {
 
         ResponseEntity<User> responseEntity1 = userController.update(user1);
 
-        Assertions.assertEquals("Serg", responseEntity1.getBody().getName());
+        Assertions.assertEquals("Serhio", responseEntity1.getBody().getName());
     }
 }

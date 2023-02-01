@@ -1,14 +1,14 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import lombok.extern.slf4j.Slf4j;
-import ru.yandex.practicum.filmorate.model.Film;
 import org.springframework.http.HttpStatus;
+import ru.yandex.practicum.filmorate.exeption.ValidationException;
+import ru.yandex.practicum.filmorate.model.Film;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-import javax.validation.ValidationException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -32,28 +32,28 @@ public class FilmController {
     @PostMapping
     public ResponseEntity<Film> create(@Valid @RequestBody Film film) {
 
-            if (film.getReleaseDate().isBefore(data)) {
-                log.debug("Ошибка валидации getReleaseDate! : {}",film.getReleaseDate());
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(film);
-            }
-            generatorId(film);
-            filmMap.put(film.getId(), film);
-            log.debug("Добавлен фильм: {}", film.getName());
-            return ResponseEntity.ok(film);
+        if (film.getReleaseDate().isBefore(data)) {
+            log.debug("Ошибка валидации getReleaseDate! : {}",film.getReleaseDate());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(film);
         }
+        generatorId(film);
+        filmMap.put(film.getId(), film);
+        log.debug("Добавлен фильм: {}", film.getName());
+        return ResponseEntity.ok(film);
+    }
 
 
     @PutMapping
     public ResponseEntity<Film> update(@Valid @RequestBody Film film) {
 
-            if (film.getId() == 0 || film.getReleaseDate().isBefore(data) ||
-                    !filmMap.containsKey(film.getId())) {
-                log.debug("Ошибка валидации update Film!: {}, {}, {}",film.getId(),film.getReleaseDate(),data);
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(film);
-            }
-            filmMap.put(film.getId(), film);
-            log.debug("Обновлен фильм: {}", film.getName());
-            return ResponseEntity.ok(film);
+        if (film.getId() == 0 || film.getReleaseDate().isBefore(data) ||
+                !filmMap.containsKey(film.getId())) {
+            log.debug("Ошибка валидации update Film!: {}, {}, {}",film.getId(),film.getReleaseDate(),data);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(film);
+        }
+        filmMap.put(film.getId(), film);
+        log.debug("Обновлен фильм: {}", film.getName());
+        return ResponseEntity.ok(film);
 
     }
 
