@@ -8,9 +8,12 @@ public interface FilmStorage {
 
     void generatorId(Film film);
 
-    void save(Film film);
+    Film save(Film film);
 
-    void update(Film film);
+    Film update(Film film);
 
     ArrayList<Film> getAllFilms();
+
+    Film getThisFilm(long id);
+
 }

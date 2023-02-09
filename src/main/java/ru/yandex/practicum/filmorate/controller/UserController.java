@@ -1,62 +1,75 @@
 package ru.yandex.practicum.filmorate.controller;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import ru.yandex.practicum.filmorate.exeption.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
-import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.filmorate.storage.InMemoryUserStorage;
+import ru.yandex.practicum.filmorate.service.UserService;
 
 import javax.validation.Valid;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 
+@RequiredArgsConstructor
 @RestController
 @Slf4j
-@Validated
 @RequestMapping("/users")
 public class UserController {
-
-    //private long userId;
-   // private final Map<Long, User> usersMap = new HashMap<>();
-    private InMemoryUserStorage userStorage;
-    /*private void generatorUserId(User user){
-        ++userId;
-        user.setId(userId);
-    }*/
+    private final UserService userService;
 
     @PostMapping
-    public ResponseEntity<User> create(@Valid @RequestBody User user) {
+    public User create(@Valid @RequestBody User user) {
 
-        if (user.getName() == null || user.getName().isBlank()) {
-            user.setName(user.getLogin());
-        }
-        userStorage.save(user);
+        userService.createUser(user);
         log.debug("Добавлен пользователь: {}", user.getName());
-        return ResponseEntity.ok(user);
+        return user;
     }
 
     @PutMapping
-    public ResponseEntity<User> update(@Valid @RequestBody User user) {
+    public User update(@Valid @RequestBody User user) {
 
-        if (user.getId() == 0 || !userStorage.getUsersMap().containsKey(user.getId())) {
-            log.debug("Ошибка валидации getId! : {}",user.getId());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(user);
-        }
-        if (user.getName() == null || user.getName().isBlank()) {
-           userStorage.update(user);
-        }
-        userStorage.getUsersMap().put(user.getId(), user);
+        userService.updateUser(user);
         log.debug("Обновлены данные пользователя: {}", user.getName());
-        return ResponseEntity.ok(user);
+        return user;
     }
 
     @GetMapping
-    public ResponseEntity<ArrayList<User>> getUsers() {
-        log.debug("Сейчас пользователей: {}", userStorage.getUsersMap().size());
-        return ResponseEntity.ok(new ArrayList<>(userStorage.getUsersMap().values()));
+    public List<User> geAllUser() {
+        log.debug("Сейчас пользователей: {}", userService.getListUsers().size());
+        return userService.getListUsers();
+    }
+
+    @GetMapping("/{id}")
+    public User getUserById(@PathVariable long id) {
+        log.debug("Информация о пользователе по id: {}", userService.getThisUserById(id));
+        return userService.getThisUserById(id);
+    }
+
+    @PutMapping("/{id}/friends/{friendId}")
+    public void createFriend(@PathVariable long id, @PathVariable long friendId) {
+
+        userService.createFriends(id, friendId);
+        log.debug("Пользователь : {} добавлен в друзья к : {}",
+                userService.getThisUserById(id), userService.getThisFriend(friendId));
+    }
+
+    @DeleteMapping("/{id}/friends/{friendId}")
+    public void deleteOfFriends(@PathVariable long id, @PathVariable long friendId) {
+        userService.deleteFriends(id, friendId);
+        log.debug("Пользователь : {} удален из друзей : {}",
+                userService.getThisUserById(id), userService.getThisFriend(friendId));
+    }
+
+    @GetMapping("/{id}/friends")
+    public List<User> getHisFriends(@PathVariable long id) {
+        log.debug("У пользователя: {} друзей", userService.getFriends(id).size());
+        return userService.getFriends(id);
+    }
+
+    @GetMapping("/{id}/friends/common/{otherId}")
+    public List<User> getCommonFriendsUser(@PathVariable long id, @PathVariable long otherId) {
+        log.debug("У пользователь : {} с пользователем : {} общих друзей : {}",
+                userService.getThisUserById(id), userService.getThisFriend(otherId),
+                userService.commonFriends(id, otherId).size());
+        return userService.commonFriends(id, otherId);
     }
 }
