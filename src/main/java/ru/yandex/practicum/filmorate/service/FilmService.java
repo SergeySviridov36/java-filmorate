@@ -17,7 +17,7 @@ public class FilmService {
 
     private final FilmStorage filmStorage;
 
-    private final LocalDate data = LocalDate.of(1895, 12, 28);
+    public static final LocalDate data = LocalDate.of(1895, 12, 28);
 
     public void createLikes(long idUser, long idFilm) {
         validateId(idUser, idFilm);
@@ -48,24 +48,24 @@ public class FilmService {
     }
 
     public Film createFilm(Film film) throws ValidationException {
-        if (film.getReleaseDate().isBefore(data)) {
-            //log.debug("Ошибка валидации getReleaseDate! : {}",film.getReleaseDate());
-            throw new ValidationException("Ошибка валидации getReleaseDate");
-        }
+        validateFilm(film);
         return filmStorage.save(film);
     }
 
     public Film updateFilm(Film film) throws ValidationException {
-        if (film.getReleaseDate().isBefore(data)) {
-            //log.debug("Ошибка валидации update Film!: {}, {}, {}",film.getId(),film.getReleaseDate(),data);
-            throw new ValidationException("Ошибка валидации update Film!");
-        }
+        validateFilm(film);
         return filmStorage.update(film);
     }
 
     private void validateId(long idUser, long idFilm) throws NotFoundException {
         if (idUser <= 0 || idFilm <= 0) {
             throw new NotFoundException("Ошибка! id не может быть меньше или равен 0.");
+        }
+    }
+
+    public void validateFilm(Film film){
+        if (film.getReleaseDate().isBefore(data)) {
+            throw new ValidationException("Ошибка валидации getReleaseDate");
         }
     }
 

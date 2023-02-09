@@ -18,17 +18,12 @@ public class UserService {
     private final UserStorage userStorage;
 
     public User createUser(User user) {
-        if (user.getName() == null || user.getName().isBlank()) {
-            user.setName(user.getLogin());
-        }
+        validateUser(user);
         return userStorage.save(user);
     }
 
     public User updateUser(User user) throws ValidationException {
-
-        if (user.getName() == null || user.getName().isBlank()) {
-            user.setName(user.getLogin());
-        }
+        validateUser(user);
         userStorage.update(user);
         return user;
     }
@@ -83,6 +78,12 @@ public class UserService {
     private void validateId(long idUser) throws NotFoundException {
         if (idUser <= 0) {
             throw new NotFoundException("Ошибка! id не может быть меньше или равен 0.");
+        }
+    }
+
+    public void validateUser(User user){
+        if (user.getName() == null || user.getName().isBlank()) {
+            user.setName(user.getLogin());
         }
     }
 }
