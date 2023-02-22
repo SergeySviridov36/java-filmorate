@@ -3,79 +3,51 @@ package ru.yandex.practicum.filmorate;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.http.ResponseEntity;
 import ru.yandex.practicum.filmorate.controller.UserController;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.UserService;
+import ru.yandex.practicum.filmorate.storage.InMemoryUserStorage;
+import ru.yandex.practicum.filmorate.storage.UserStorage;
 
 import java.time.LocalDate;
 
 public class UserControllerTest {
-
-    private UserController userController;
+    private UserController controller;
+    private UserStorage storage;
+    private UserService service;
     private User user;
-
     @BeforeEach
-    public void createForAllTestUserControllerAndUser() {
-        userController = new UserController();
+    public void createUserAndController() {
+        storage = new InMemoryUserStorage();
+        service = new UserService(storage);
+        controller = new UserController(service);
         user = new User();
-        user.setName("Serg");
-        user.setEmail("postidemail@mail.ru");
-        user.setLogin("Serhio");
-        LocalDate localData = LocalDate.of(1985, 5, 27);
-        user.setBirthday(localData);
-
+        user.setEmail("sviridovsa36reg@mail.ru");
+        user.setLogin("Serg");
+        user.setName("Sergey");
+        LocalDate localDate = LocalDate.of(1985, 5, 27);
+        user.setBirthday(localDate);
     }
 
     @Test
-    public void shouldUserIdPost() {
-        ResponseEntity<User> responseEntity = userController.create(user);
-        Assertions.assertEquals(1, responseEntity.getBody().getId());
+    public void shouldValidateUserOk() {
+        service.validateUser(user);
+
+        Assertions.assertEquals("Sergey",user.getName());
     }
 
     @Test
-    public void shouldUserIdPut() {
-        ResponseEntity<User> responseEntity1 = userController.create(user);
-        ResponseEntity<User> responseEntity2 = userController.update(user);
-        int cod1 = responseEntity2.getStatusCodeValue();
-
-        Assertions.assertEquals(200, cod1);
-
-        user.setId(333);
-        ResponseEntity<User> responseEntity3 = userController.update(user);
-        int cod2 = responseEntity3.getStatusCodeValue();
-        Assertions.assertEquals(500, cod2);
-
-        user.setId(0);
-        ResponseEntity<User> responseEntity4 = userController.update(user);
-        int cod3 = responseEntity4.getStatusCodeValue();
-        Assertions.assertEquals(500, cod3);
-
-    }
-
-    @Test
-    public void shouldUserNamePost() {
-        ResponseEntity<User> responseEntity = userController.create(user);
-        Assertions.assertEquals("Serg", responseEntity.getBody().getName());
-
+    public void shouldValidateUserNameNull() {
         user.setName(null);
-        ResponseEntity<User> responseEntity2 = userController.create(user);
+        service.validateUser(user);
 
-        Assertions.assertEquals("Serhio", responseEntity2.getBody().getName());
+        Assertions.assertEquals("Serg", user.getName());
     }
-
     @Test
-    public void shouldUserNamePut() {
-        ResponseEntity<User> responseEntity = userController.create(user);
+    public void shouldValidateUserNameBlank() {
+        user.setName(" ");
+        service.validateUser(user);
 
-        User user1 = new User();
-        user1.setId(1);
-        user1.setEmail("postidemail@mail.ru");
-        user1.setLogin("Serhio");
-        LocalDate localData = LocalDate.of(1985, 5, 27);
-        user1.setBirthday(localData);
-
-        ResponseEntity<User> responseEntity1 = userController.update(user1);
-
-        Assertions.assertEquals("Serhio", responseEntity1.getBody().getName());
+        Assertions.assertEquals("Serg", user.getName());
     }
 }

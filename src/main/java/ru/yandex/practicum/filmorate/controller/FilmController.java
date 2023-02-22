@@ -1,65 +1,64 @@
 package ru.yandex.practicum.filmorate.controller;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import ru.yandex.practicum.filmorate.exeption.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
-import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.service.FilmService;
 
 import javax.validation.Valid;
-import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 
 @RestController
 @Slf4j
 @RequestMapping("/films")
-@Validated
+@RequiredArgsConstructor
 public class FilmController {
 
-    private long idFilm;
-    private final LocalDate data = LocalDate.of(1895, 12, 28);
-    private final Map<Long, Film> filmMap = new HashMap<>();
-
-    private void generatorId(Film film){
-        ++idFilm;
-        film.setId(idFilm);
-    }
+    private final FilmService filmService;
 
     @PostMapping
-    public ResponseEntity<Film> create(@Valid @RequestBody Film film) {
-
-        if (film.getReleaseDate().isBefore(data)) {
-            log.debug("Ошибка валидации getReleaseDate! : {}",film.getReleaseDate());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(film);
-        }
-        generatorId(film);
-        filmMap.put(film.getId(), film);
+    public Film create(@Valid @RequestBody Film film) {
+        filmService.createFilm(film);
         log.debug("Добавлен фильм: {}", film.getName());
-        return ResponseEntity.ok(film);
+        return film;
     }
 
-
     @PutMapping
-    public ResponseEntity<Film> update(@Valid @RequestBody Film film) {
-
-        if (film.getId() == 0 || film.getReleaseDate().isBefore(data) ||
-                !filmMap.containsKey(film.getId())) {
-            log.debug("Ошибка валидации update Film!: {}, {}, {}",film.getId(),film.getReleaseDate(),data);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(film);
-        }
-        filmMap.put(film.getId(), film);
+    public Film update(@Valid @RequestBody Film film) {
+        filmService.updateFilm(film);
         log.debug("Обновлен фильм: {}", film.getName());
-        return ResponseEntity.ok(film);
+        return film;
+    }
 
+    @GetMapping("/{id}")
+    public Film getFilmsById(@PathVariable long id) {
+        log.debug("Информация о фильме по id: {}", filmService.getThisFilmById(id));
+        return filmService.getThisFilmById(id);
     }
 
     @GetMapping
-    public ResponseEntity<ArrayList<Film>> getFilms() {
-        log.debug("Фильмов в каталоге: {}", filmMap.size());
-        return ResponseEntity.ok(new ArrayList<>(filmMap.values()));
+    public ArrayList<Film> getFilms() {
+        log.debug("Фильмов в каталоге: {}", filmService.getListFilms().size());
+        return new ArrayList<>(filmService.getListFilms());
+    }
+
+    @PutMapping("/{id}/like/{userId}")
+    public void addLikesToFilm(@PathVariable long id, @PathVariable long userId) {
+        filmService.createLikes(userId, id);
+        log.debug("Добавлен лайк к фильму: {}", filmService.getThisFilmById(id));
+    }
+
+    @DeleteMapping("/{id}/like/{userId}")
+    public void deleteLikesToFilm(@PathVariable long id, @PathVariable long userId) {
+        filmService.deleteLikes(userId, id);
+        log.debug("Удален лайк к фильму: {}", filmService.getThisFilmById(id));
+    }
+
+    @GetMapping("/popular")
+    public List<Film> getListCountFilms(@RequestParam(value = "count", defaultValue = "10", required = false) int count) {
+        log.debug("Фильмов показано по лайкам : {}", filmService.getTenPopularFilm(count).size());
+        return filmService.getTenPopularFilm(count);
     }
 }
