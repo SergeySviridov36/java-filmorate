@@ -24,5 +24,6 @@ public class Film {
     private LocalDate releaseDate;
     @Positive
     private int duration;
-
+    private String genre;
+    private String ratingMPA;
 }
