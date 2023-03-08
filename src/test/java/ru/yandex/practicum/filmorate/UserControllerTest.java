@@ -21,7 +21,7 @@ public class UserControllerTest {
         storage = new InMemoryUserStorage();
         service = new UserService(storage);
         controller = new UserController(service);
-        user = new User();
+        user = new User(userRows.getLong("users_id"), userRows.getLong("email"), userRows.getLong("login"), userRows.getLong("name"), userRows.getLong("birthday"));
         user.setEmail("sviridovsa36reg@mail.ru");
         user.setLogin("Serg");
         user.setName("Sergey");
