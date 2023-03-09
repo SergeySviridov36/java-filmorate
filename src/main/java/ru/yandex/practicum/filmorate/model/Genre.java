@@ -4,10 +4,10 @@ import lombok.*;
 
 @Getter
 @Setter
-@EqualsAndHashCode
 @AllArgsConstructor
 @NoArgsConstructor
+@EqualsAndHashCode(callSuper = false)
 public class Genre {
-    private int genreId;
+    private int id;
     private String name;
 }

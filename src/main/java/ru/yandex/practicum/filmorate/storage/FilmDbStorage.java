@@ -30,7 +30,7 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public Film save(Film film) {
-        String sql = "INSERT INTO film(name,description,release_date,duration,MPA_id) VALUES(?,?,?,?,?)";
+        String sql = "INSERT INTO film(name,description,release_date,duration,rate,MPA_id) VALUES(?,?,?,?,?,?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(connection -> {
             PreparedStatement stmt = connection.prepareStatement(sql, new String[]{"film_id"});
@@ -38,7 +38,8 @@ public class FilmDbStorage implements FilmStorage {
             stmt.setString(2, film.getDescription());
             stmt.setDate(3, Date.valueOf(film.getReleaseDate()));
             stmt.setInt(4, film.getDuration());
-            stmt.setInt(5, film.getMPA().getId());
+            stmt.setInt(5, film.getRate());
+            stmt.setInt(6, film.getMPA().getId());
             return stmt;
         }, keyHolder);
         film.setId(keyHolder.getKey().longValue());
@@ -61,7 +62,7 @@ public class FilmDbStorage implements FilmStorage {
             throw new NotFoundException("Фильм для обновления не найден");
         }
         addFilmGenre(film);
-        return film;
+        return getFilmById(film.getId());
     }
 
     @Override
@@ -78,7 +79,7 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     @Override
-    public List<Genre> getListGenre() {
+    public List<Genre> getListGenres() {
         String sql = "SELECT * FROM genre";
         return jdbcTemplate.query(sql, (rs, rowNum) -> mappGenre(rs));
     }
@@ -103,9 +104,24 @@ public class FilmDbStorage implements FilmStorage {
         return jdbcTemplate.query(sql, (rs, rowNum) -> mappMPA(rs), mpaId).
                 stream().findAny().orElseThrow(() -> new NotFoundException("Рейтинг с id " + mpaId + " не найден."));
     }
+    @Override
+    public void createLikes(long idFilm,long idUser){
+        String sql1 = "INSERT INTO like_films(film_id,users_id) VALUES(?,?)";
+        jdbcTemplate.update(sql1,idFilm,idUser);
+        String sql2 ="UPDATE film SET rate = rate + 1  WHERE film_id=?";
+        jdbcTemplate.update(sql2,idFilm);
+    }
+
+    @Override
+    public void deleteLikesToFilm(long idUser, long idFilm) {
+        String sql = "DELETE FROM like_films WHERE users_id=? and film_id= ?";
+        jdbcTemplate.update(sql,idUser,idFilm);
+        String sql2 ="UPDATE film SET rate = rate - 1 WHERE film_id=?";
+        jdbcTemplate.update(sql2,idFilm);
+    }
 
     private void addFilmGenre(Film film) {
-        String sql1 = "DELETE FROM film_genre WHERE genre_id = ?";
+        String sql1 = "DELETE film_genre WHERE film_id = ?";
         jdbcTemplate.update(sql1, film.getId());
         String sql2 = "INSERT INTO film_genre(genre_id,film_id) VALUES (?,?)";
         if (film.getGenres() == null || film.getGenres().isEmpty()) {
@@ -115,10 +131,9 @@ public class FilmDbStorage implements FilmStorage {
         ArrayList<Genre> genres = new ArrayList<>(genre);
         jdbcTemplate.batchUpdate(sql2, new BatchPreparedStatementSetter() {
             public void setValues(PreparedStatement ps, int i) throws SQLException {
-                ps.setInt(1, genres.get(i).getGenreId());
+                ps.setInt(1, genres.get(i).getId());
                 ps.setLong(2, film.getId());
             }
-
             public int getBatchSize() {
                 return genres.size();
             }
@@ -129,6 +144,7 @@ public class FilmDbStorage implements FilmStorage {
         String sql = "SELECT * FROM genre WHERE genre_id IN(SELECT genre_id FROM film_genre WHERE film_id=?) ";
         return jdbcTemplate.query(sql, (rs, rowNum) -> mappGenre(rs), idFilm);
     }
+
 
     private Film mapperFilm(ResultSet rs) throws SQLException {
 
@@ -155,7 +171,7 @@ public class FilmDbStorage implements FilmStorage {
 
     private Genre mappGenre(ResultSet rs) throws SQLException {
         Genre genre = new Genre();
-        genre.setGenreId(rs.getInt("genre_id"));
+        genre.setId(rs.getInt("genre_id"));
         genre.setName(rs.getString("name"));
         return genre;
     }

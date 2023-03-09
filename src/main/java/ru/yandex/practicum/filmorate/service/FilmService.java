@@ -9,6 +9,7 @@ import ru.yandex.practicum.filmorate.storage.FilmDbStorage;
 
 import javax.validation.ValidationException;
 import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -24,26 +25,26 @@ public class FilmService {
 
     public static final LocalDate data = LocalDate.of(1895, 12, 28);
 
-   /* public void createLikes(long idUser, long idFilm) {
-        validateId(idUser, idFilm);
-        filmDbStorage.getFilmById(idFilm).getLikes().add(idUser);
+    public void createLikes(long idFilm, long idUser) {
+        validateId(idFilm,idUser);
+        filmDbStorage.createLikes(idFilm,idUser);
 
     }
 
     public void deleteLikes(long idUser, long idFilm) {
         validateId(idUser, idFilm);
-        filmDbStorage.getFilmById(idFilm).getLikes().remove(idUser);
+        filmDbStorage.deleteLikesToFilm(idUser,idFilm);
     }
 
     public List<Film> getTenPopularFilm(int count) {
+        validated(count);
         return filmDbStorage.getListFilms().stream().
-                sorted((f0, f1) -> {
-                    int comp = getByLikes(f0).compareTo(getByLikes(f1));
-                    comp = -1 * comp;
-                    return comp;
-                }).limit(count).collect(Collectors.toList());
+                sorted(Comparator.comparingInt(Film::getRate).
+                        reversed()).
+                limit(count).
+                collect(Collectors.toList());
     }
-*/
+
     public List<Film> getListFilms() {
         return filmDbStorage.getListFilms();
     }
@@ -62,8 +63,8 @@ public class FilmService {
         return filmDbStorage.update(film);
     }
 
-    public List<Genre> getListGenre() {
-        return filmDbStorage.getListGenre();
+    public List<Genre> getListGenres() {
+        return filmDbStorage.getListGenres();
     }
 
     public Genre getGenreById(Integer id) {
@@ -74,14 +75,9 @@ public class FilmService {
         return filmDbStorage.getListMPA();
     }
 
-    public MPA getMPAById(Integer mpaId) {
-        return filmDbStorage.getMPAById(mpaId);
+    public MPA getMPAById(Integer id) {
+        return filmDbStorage.getMPAById(id);
     }
-
-   /* private Integer getByLikes(Film film) {
-        return film.getLikes().size();
-    }*/
-
 
     private void validateId(long idUser, long idFilm) throws NotFoundException {
         if (idUser <= 0 || idFilm <= 0) {
@@ -92,6 +88,11 @@ public class FilmService {
     public void validateFilm(Film film) {
         if (film.getReleaseDate().isBefore(data)) {
             throw new ValidationException("Ошибка валидации getReleaseDate");
+        }
+    }
+    public  void validated(int id) {
+        if (id <= 0) {
+            throw new NotFoundException("Ошибка! id не может быть меньше или равен 0.");
         }
     }
 }

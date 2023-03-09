@@ -14,7 +14,6 @@ import java.util.List;
 public class Film {
 
     private long id;
-
     @NotBlank
     private String name;
     @NotBlank

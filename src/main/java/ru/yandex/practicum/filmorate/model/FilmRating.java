@@ -8,6 +8,6 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 public class FilmRating {
-    private int MPAId;
+    private int id;
     private String name;
 }
