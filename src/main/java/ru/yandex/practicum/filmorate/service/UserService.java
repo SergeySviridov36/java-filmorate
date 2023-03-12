@@ -3,7 +3,7 @@ package ru.yandex.practicum.filmorate.service;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exeption.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.storage.UserDbStorage;
+import ru.yandex.practicum.filmorate.storage.UserStorage;
 
 import javax.validation.ValidationException;
 import java.util.List;
@@ -13,9 +13,9 @@ import java.util.stream.Collectors;
 @Service
 public class UserService {
 
-    private final UserDbStorage userDbStorage;
+    private final UserStorage userDbStorage;
 
-    public UserService(UserDbStorage userDbStorage) {
+    public UserService(UserStorage userDbStorage) {
         this.userDbStorage = userDbStorage;
     }
 
@@ -40,13 +40,13 @@ public class UserService {
 
     public void createFriends(long idUser, long idFriend) {
         validateId(idUser, idFriend);
-        userDbStorage.createFriends(idUser,idFriend);
+        userDbStorage.createFriends(idUser, idFriend);
 
     }
 
     public void deleteFriends(long idUser, long idFriend) {
         validateId(idUser, idFriend);
-        userDbStorage.deleteFriends(idUser,idFriend);
+        userDbStorage.deleteFriends(idUser, idFriend);
     }
 
     public List<User> getFriends(long idUser) {
@@ -74,7 +74,7 @@ public class UserService {
         }
     }
 
-    public void validateUser(User user){
+    public void validateUser(User user) {
         if (user.getName() == null || user.getName().isBlank()) {
             user.setName(user.getLogin());
         }

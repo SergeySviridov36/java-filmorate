@@ -5,7 +5,7 @@ import ru.yandex.practicum.filmorate.exeption.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.MPA;
-import ru.yandex.practicum.filmorate.storage.FilmDbStorage;
+import ru.yandex.practicum.filmorate.storage.FilmStorage;
 
 import javax.validation.ValidationException;
 import java.time.LocalDate;
@@ -17,23 +17,23 @@ import java.util.stream.Collectors;
 @Service
 public class FilmService {
 
-    private final FilmDbStorage filmDbStorage;
+    private final FilmStorage filmDbStorage;
 
-    public FilmService(FilmDbStorage filmDbStorage) {
+    public FilmService(FilmStorage filmDbStorage) {
         this.filmDbStorage = filmDbStorage;
     }
 
     public static final LocalDate data = LocalDate.of(1895, 12, 28);
 
     public void createLikes(long idFilm, long idUser) {
-        validateId(idFilm,idUser);
-        filmDbStorage.createLikes(idFilm,idUser);
+        validateId(idFilm, idUser);
+        filmDbStorage.createLikes(idFilm, idUser);
 
     }
 
     public void deleteLikes(long idUser, long idFilm) {
         validateId(idUser, idFilm);
-        filmDbStorage.deleteLikesToFilm(idUser,idFilm);
+        filmDbStorage.deleteLikesToFilm(idUser, idFilm);
     }
 
     public List<Film> getTenPopularFilm(int count) {
@@ -90,7 +90,8 @@ public class FilmService {
             throw new ValidationException("Ошибка валидации getReleaseDate");
         }
     }
-    public  void validated(int id) {
+
+    public void validated(int id) {
         if (id <= 0) {
             throw new NotFoundException("Ошибка! id не может быть меньше или равен 0.");
         }

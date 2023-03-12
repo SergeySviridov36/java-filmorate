@@ -8,6 +8,7 @@ import ru.yandex.practicum.filmorate.service.UserService;
 
 import javax.validation.Valid;
 import java.util.List;
+
 @RequestMapping("/users")
 @RequiredArgsConstructor
 @RestController
@@ -38,7 +39,7 @@ public class UserController {
 
     @GetMapping("/{id}")
     public User getUserById(@PathVariable long id) {
-        log.debug("Информация о пользователе по id: {}",id);
+        log.debug("Информация о пользователе по id: {}", id);
         return userService.findUserById(id);
     }
 
@@ -57,7 +58,7 @@ public class UserController {
 
     @GetMapping("/{id}/friends")
     public List<User> getFriends(@PathVariable long id) {
-        log.debug("Получен список друзей пользователя: {} друзей",id);
+        log.debug("Получен список друзей пользователя: {} друзей", id);
         return userService.getFriends(id);
     }
 
