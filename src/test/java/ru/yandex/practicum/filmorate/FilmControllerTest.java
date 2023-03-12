@@ -1,14 +1,14 @@
 package ru.yandex.practicum.filmorate;
 
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.jdbc.core.JdbcTemplate;
 import ru.yandex.practicum.filmorate.controller.FilmController;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
+import ru.yandex.practicum.filmorate.storage.FilmDbStorage;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
-import ru.yandex.practicum.filmorate.storage.InMemoryFilmStorage;
 
 import javax.validation.ValidationException;
 import java.time.LocalDate;
@@ -22,10 +22,11 @@ public class FilmControllerTest {
     private Film film;
     private FilmStorage storage;
     private FilmService service;
+    private JdbcTemplate jdbcTemplate = new JdbcTemplate();
 
     @BeforeEach
     public void createFilmAndController() {
-        storage = new InMemoryFilmStorage();
+        storage = new FilmDbStorage(jdbcTemplate);
         service = new FilmService(storage);
         controller = new FilmController(service);
         film = new Film();
@@ -47,7 +48,7 @@ public class FilmControllerTest {
     public void shouldValidateFilmFail() {
         LocalDate localDate = LocalDate.of(1800, 12, 20);
         film.setReleaseDate(localDate);
-        Exception exception = assertThrows(ValidationException.class, ()->service.validateFilm(film));
+        Exception exception = assertThrows(ValidationException.class, () -> service.validateFilm(film));
 
         Assertions.assertEquals("Ошибка валидации getReleaseDate", exception.getMessage());
     }
