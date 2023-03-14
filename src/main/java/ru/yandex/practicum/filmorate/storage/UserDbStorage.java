@@ -1,5 +1,6 @@
 package ru.yandex.practicum.filmorate.storage;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
@@ -18,6 +19,7 @@ public class UserDbStorage implements UserStorage {
 
     private final JdbcTemplate jdbcTemplate;
 
+    @Autowired
     public UserDbStorage(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
@@ -63,24 +65,6 @@ public class UserDbStorage implements UserStorage {
         String sql = "select * from users where users_id = ?";
         return jdbcTemplate.query(sql, (rs, rowNum) -> mapperUser(rs), id).
                 stream().findAny().orElseThrow(() -> new NotFoundException("Пользователь с id " + id + " не найден."));
-    }
-
-    @Override
-    public List<User> getFriends(long idUser) {
-        String sql = "select * from users where users_id in (select friend_id from friend_user where users_id = ?)";
-        return jdbcTemplate.query(sql, ((rs, rowNum) -> mapperUser(rs)), idUser);
-    }
-
-    @Override
-    public void createFriends(long idUser, long idFriend) {
-        String sql = "INSERT INTO friend_user(users_id,friend_id) VALUES (?,?) ";
-        jdbcTemplate.update(sql, idUser, idFriend);
-    }
-
-    @Override
-    public void deleteFriends(long idUser, long idFriend) {
-        String sql = "DELETE FROM friend_user WHERE users_id=? and friend_id=?";
-        jdbcTemplate.update(sql, idUser, idFriend);
     }
 
     private User mapperUser(ResultSet resultSet) throws SQLException {

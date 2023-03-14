@@ -1,25 +1,32 @@
 package ru.yandex.practicum.filmorate.service;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exeption.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.MPA;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
+import ru.yandex.practicum.filmorate.storage.GenreStorage;
+import ru.yandex.practicum.filmorate.storage.MPAStorage;
 
 import javax.validation.ValidationException;
 import java.time.LocalDate;
-import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 
 @Service
 public class FilmService {
+    private final MPAStorage MPADbStorage;
+
+    private final GenreStorage genreDbStorage;
 
     private final FilmStorage filmDbStorage;
 
-    public FilmService(FilmStorage filmDbStorage) {
+    @Autowired
+    public FilmService(MPAStorage MPADbStorage, GenreStorage genreDbStorage, FilmStorage filmDbStorage) {
+        this.MPADbStorage = MPADbStorage;
+        this.genreDbStorage = genreDbStorage;
         this.filmDbStorage = filmDbStorage;
     }
 
@@ -38,11 +45,7 @@ public class FilmService {
 
     public List<Film> getTenPopularFilm(int count) {
         validated(count);
-        return filmDbStorage.getListFilms().stream().
-                sorted(Comparator.comparingInt(Film::getRate).
-                        reversed()).
-                limit(count).
-                collect(Collectors.toList());
+        return filmDbStorage.getPopularFilm(count);
     }
 
     public List<Film> getListFilms() {
@@ -64,19 +67,19 @@ public class FilmService {
     }
 
     public List<Genre> getListGenres() {
-        return filmDbStorage.getListGenres();
+        return genreDbStorage.getListGenres();
     }
 
     public Genre getGenreById(Integer id) {
-        return filmDbStorage.getGenreById(id);
+        return genreDbStorage.getGenreById(id);
     }
 
     public List<MPA> getListMPA() {
-        return filmDbStorage.getListMPA();
+        return MPADbStorage.getListMPA();
     }
 
     public MPA getMPAById(Integer id) {
-        return filmDbStorage.getMPAById(id);
+        return MPADbStorage.getMPAById(id);
     }
 
     private void validateId(long idUser, long idFilm) throws NotFoundException {

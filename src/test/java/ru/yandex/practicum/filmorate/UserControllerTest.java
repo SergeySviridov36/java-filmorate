@@ -7,6 +7,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import ru.yandex.practicum.filmorate.controller.UserController;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.UserService;
+import ru.yandex.practicum.filmorate.storage.FriendDbStorage;
+import ru.yandex.practicum.filmorate.storage.FriendStorage;
 import ru.yandex.practicum.filmorate.storage.UserDbStorage;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
@@ -15,6 +17,8 @@ import java.time.LocalDate;
 public class UserControllerTest {
     private UserController controller;
     private UserStorage storage;
+
+    private  FriendStorage friendDbStorage;
     private UserService service;
     private User user;
 
@@ -22,8 +26,9 @@ public class UserControllerTest {
 
     @BeforeEach
     public void createUserAndController() {
+        friendDbStorage = new FriendDbStorage(jdbcTemplate);
         storage = new UserDbStorage(jdbcTemplate);
-        service = new UserService(storage);
+        service = new UserService(storage,friendDbStorage);
         controller = new UserController(service);
         user = new User();
         user.setEmail("sviridovsa36reg@mail.ru");

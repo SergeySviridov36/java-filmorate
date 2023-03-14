@@ -12,8 +12,7 @@ import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.MPA;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.storage.FilmStorage;
-import ru.yandex.practicum.filmorate.storage.UserStorage;
+import ru.yandex.practicum.filmorate.storage.*;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -27,6 +26,12 @@ class FilmorateApplicationTests {
 
     private final UserStorage userStorage;
     private final FilmStorage filmStorage;
+
+    private final MPAStorage MPAStorage;
+
+    private final GenreStorage genreStorage;
+
+    private  final FriendStorage friendStorage;
     private User user;
 
     @BeforeEach
@@ -101,30 +106,30 @@ class FilmorateApplicationTests {
         friend.setBirthday(LocalDate.of(2000, 2, 22));
 
         User friend1 = userStorage.save(friend);
-        userStorage.createFriends(user3.getId(), friend1.getId());
-        List<User> friends = userStorage.getFriends(user3.getId());
+        friendStorage.createFriends(user3.getId(), friend1.getId());
+        List<User> friends = friendStorage.getFriends(user3.getId());
         Assertions.assertEquals(1, friends.size());
 
-        userStorage.deleteFriends(user3.getId(), friend1.getId());
-        List<User> friends1 = userStorage.getFriends(user3.getId());
+        friendStorage.deleteFriends(user3.getId(), friend1.getId());
+        List<User> friends1 = friendStorage.getFriends(user3.getId());
         Assertions.assertEquals(0, friends1.size());
     }
 
     @Test
     public void genreTest() {
-        List<Genre> genres = filmStorage.getListGenres();
+        List<Genre> genres = genreStorage.getListGenres();
         Assertions.assertEquals(6, genres.size());
 
-        Genre genre = filmStorage.getGenreById(6);
+        Genre genre = genreStorage.getGenreById(6);
         assertThat(genre).hasFieldOrPropertyWithValue("name", "Боевик");
     }
 
     @Test
     public void MPATest() {
-        List<MPA> listMPA = filmStorage.getListMPA();
+        List<MPA> listMPA = MPAStorage.getListMPA();
         Assertions.assertEquals(5, listMPA.size());
 
-        MPA mpa = filmStorage.getMPAById(4);
+        MPA mpa = MPAStorage.getMPAById(4);
         assertThat(mpa).hasFieldOrPropertyWithValue("name", "R");
     }
 }

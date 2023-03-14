@@ -1,8 +1,10 @@
 package ru.yandex.practicum.filmorate.service;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exeption.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.storage.FriendStorage;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
 import javax.validation.ValidationException;
@@ -15,8 +17,12 @@ public class UserService {
 
     private final UserStorage userDbStorage;
 
-    public UserService(UserStorage userDbStorage) {
+    private final FriendStorage friendDbStorage;
+
+    @Autowired
+    public UserService(UserStorage userDbStorage, FriendStorage friendDbStorage) {
         this.userDbStorage = userDbStorage;
+        this.friendDbStorage = friendDbStorage;
     }
 
     public User createUser(User user) {
@@ -40,24 +46,24 @@ public class UserService {
 
     public void createFriends(long idUser, long idFriend) {
         validateId(idUser, idFriend);
-        userDbStorage.createFriends(idUser, idFriend);
+        friendDbStorage.createFriends(idUser, idFriend);
 
     }
 
     public void deleteFriends(long idUser, long idFriend) {
         validateId(idUser, idFriend);
-        userDbStorage.deleteFriends(idUser, idFriend);
+        friendDbStorage.deleteFriends(idUser, idFriend);
     }
 
     public List<User> getFriends(long idUser) {
         validateId(idUser);
-        return userDbStorage.getFriends(idUser);
+        return friendDbStorage.getFriends(idUser);
     }
 
     public List<User> commonFriends(long idUser, long idFriends) {
         validateId(idUser, idFriends);
-        List<User> listFriendUser = userDbStorage.getFriends(idUser);
-        return userDbStorage.getFriends(idFriends).stream().
+        List<User> listFriendUser = friendDbStorage.getFriends(idUser);
+        return friendDbStorage.getFriends(idFriends).stream().
                 filter(listFriendUser::contains).
                 collect(Collectors.toList());
     }

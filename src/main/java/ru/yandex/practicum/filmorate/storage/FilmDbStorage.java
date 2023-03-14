@@ -1,5 +1,6 @@
 package ru.yandex.practicum.filmorate.storage;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -14,23 +15,21 @@ import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Component
 public class FilmDbStorage implements FilmStorage {
 
     private final JdbcTemplate jdbcTemplate;
 
+    @Autowired
     public FilmDbStorage(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
     @Override
     public Film save(Film film) {
-        String sql = "INSERT INTO film(name,description,release_date,duration,rate,MPA_id) VALUES(?,?,?,?,?,?)";
+        String sql = "INSERT INTO film(film_name,description,release_date,duration,rate,MPA_id) VALUES(?,?,?,?,?,?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(connection -> {
             PreparedStatement stmt = connection.prepareStatement(sql, new String[]{"film_id"});
@@ -49,7 +48,7 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public Film update(Film film) {
-        String sql = "UPDATE film SET name= ?, description =?, release_date = ?,duration =?," +
+        String sql = "UPDATE film SET film_name= ?, description =?, release_date = ?,duration =?," +
                 "rate= ?,MPA_id=? WHERE film_id =? ";
         int upd = jdbcTemplate.update(sql, film.getName(),
                 film.getDescription(),
@@ -67,41 +66,32 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public List<Film> getListFilms() {
-        String sql = "SELECT * FROM film";
-        return jdbcTemplate.query(sql, (rs, rowNum) -> mapperFilm(rs));
+        String sql = "SELECT *, MPA_name,g.genre_id, genre_name  FROM film f " +
+                "LEFT JOIN film_rating AS fr ON f.MPA_id = fr.MPA_id " +
+                "LEFT JOIN film_genre AS fg ON f.film_id = fg.film_id " +
+                "LEFT JOIN genre AS  g ON g.genre_id = fg.genre_id";
+        return jdbcTemplate.query(sql, (rs, rowNum) -> mapperFilms(rs));
+    }
+
+    @Override
+    public List<Film> getPopularFilm(int count) {
+        String sql = "SELECT *, fr.MPA_name " +
+                "FROM film f " +
+                "LEFT JOIN film_rating AS fr ON f.MPA_id = fr.MPA_id " +
+                "ORDER BY rate DESC LIMIT ?";
+        List<Film> j = jdbcTemplate.query(sql, (rs, rowNum) -> mapperFilms(rs), count);
+        return j;
     }
 
     @Override
     public Film getFilmById(long id) {
-        String sql = "SELECT * FROM film WHERE film_id = ?";
-        return jdbcTemplate.query(sql, (rs, rowNum) -> mapperFilm(rs), id).
+        String sql = "SELECT *, fr.MPA_name " +
+                "FROM film f " +
+                "LEFT JOIN film_rating fr ON f.MPA_id = fr.MPA_id " +
+                "WHERE film_id = ?";
+        return jdbcTemplate.query(sql, (rs, rowNum) -> mapperFilms(rs), id).
                 stream().findAny().orElseThrow(() -> new NotFoundException("Фильм с id " + id + " не найден."));
-    }
 
-    @Override
-    public List<Genre> getListGenres() {
-        String sql = "SELECT * FROM genre";
-        return jdbcTemplate.query(sql, (rs, rowNum) -> mappGenre(rs));
-    }
-
-    @Override
-    public Genre getGenreById(Integer id) {
-        String sql = "SELECT * FROM genre WHERE genre_id = ?";
-        return jdbcTemplate.query(sql, (rs, rowNum) -> mappGenre(rs), id).
-                stream().findAny().orElseThrow(() -> new NotFoundException("Жанр с id " + id + " не найден."));
-    }
-
-    @Override
-    public List<MPA> getListMPA() {
-        String sql = "SELECT * FROM film_rating";
-        return jdbcTemplate.query(sql, (rs, rowNum) -> mappMPA(rs));
-    }
-
-    @Override
-    public MPA getMPAById(Integer mpaId) {
-        String sql = "SELECT * FROM film_rating WHERE MPA_id = ?";
-        return jdbcTemplate.query(sql, (rs, rowNum) -> mappMPA(rs), mpaId).
-                stream().findAny().orElseThrow(() -> new NotFoundException("Рейтинг с id " + mpaId + " не найден."));
     }
 
     @Override
@@ -142,20 +132,23 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     private List<Genre> getGenreByIdFilms(Long idFilm) {
-        String sql = "SELECT * FROM genre WHERE genre_id IN(SELECT genre_id FROM film_genre WHERE film_id=?) ";
+        String sql = "SELECT g.genre_id, g.genre_name " +
+                "FROM genre g " +
+                "LEFT JOIN film_genre AS fg ON g.genre_id = fg.genre_id " +
+                "WHERE film_id = ?";
         return jdbcTemplate.query(sql, (rs, rowNum) -> mappGenre(rs), idFilm);
     }
 
-    private Film mapperFilm(ResultSet rs) throws SQLException {
+    private Film mapperFilms(ResultSet rs) throws SQLException {
 
         Film film = new Film();
         film.setId(rs.getLong("film_id"));
-        film.setName(rs.getString("name"));
+        film.setName(rs.getString("film_name"));
         film.setReleaseDate(rs.getDate("release_date").toLocalDate());
         film.setDescription(rs.getString("description"));
         film.setDuration(rs.getInt("duration"));
         film.setRate(rs.getInt("rate"));
-        MPA mpa = getMPAById(rs.getInt("MPA_id"));
+        MPA mpa = mappMPA(rs);
         film.setMPA(mpa);
         film.setGenres(getGenreByIdFilms(rs.getLong("film_id")));
         return film;
@@ -164,14 +157,14 @@ public class FilmDbStorage implements FilmStorage {
     private MPA mappMPA(ResultSet rs) throws SQLException {
         MPA mpa = new MPA();
         mpa.setId(rs.getInt("MPA_id"));
-        mpa.setName(rs.getString("name"));
+        mpa.setName(rs.getString("MPA_name"));
         return mpa;
     }
 
     private Genre mappGenre(ResultSet rs) throws SQLException {
         Genre genre = new Genre();
         genre.setId(rs.getInt("genre_id"));
-        genre.setName(rs.getString("name"));
+        genre.setName(rs.getString("genre_name"));
         return genre;
     }
 }
