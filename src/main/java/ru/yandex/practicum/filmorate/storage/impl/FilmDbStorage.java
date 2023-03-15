@@ -1,4 +1,4 @@
-package ru.yandex.practicum.filmorate.storage;
+package ru.yandex.practicum.filmorate.storage.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
@@ -10,6 +10,7 @@ import ru.yandex.practicum.filmorate.exeption.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.MPA;
+import ru.yandex.practicum.filmorate.storage.FilmStorage;
 
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -66,31 +67,38 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public List<Film> getListFilms() {
-        String sql = "SELECT *, MPA_name,g.genre_id, genre_name  FROM film f " +
-                "LEFT JOIN film_rating AS fr ON f.MPA_id = fr.MPA_id " +
-                "LEFT JOIN film_genre AS fg ON f.film_id = fg.film_id " +
-                "LEFT JOIN genre AS  g ON g.genre_id = fg.genre_id";
-        return jdbcTemplate.query(sql, (rs, rowNum) -> mapperFilms(rs));
+        Map<Long,List<Genre>> genresListByFilm = new HashMap<>();
+        String sql1 ="SELECT *,fg.film_id FROM genre g " +
+                     "LEFT JOIN film_genre fg ON g.genre_id = fg.genre_id";
+        jdbcTemplate.query(sql1,((rs,rowNum) -> mapperGenre(rs,genresListByFilm)));
+        String sql2 = "SELECT *,fr.MPA_name FROM film f " +
+                      "LEFT JOIN film_rating fr ON f.MPA_id = fr.MPA_id";
+        return jdbcTemplate.query(sql2, ((rs, rowNum) -> mapperFilms(rs,genresListByFilm)));
     }
 
     @Override
     public List<Film> getPopularFilm(int count) {
         String sql = "SELECT *, fr.MPA_name " +
-                "FROM film f " +
-                "LEFT JOIN film_rating AS fr ON f.MPA_id = fr.MPA_id " +
-                "ORDER BY rate DESC LIMIT ?";
-        List<Film> j = jdbcTemplate.query(sql, (rs, rowNum) -> mapperFilms(rs), count);
-        return j;
+                     "FROM film f " +
+                     "LEFT JOIN film_rating AS fr ON f.MPA_id = fr.MPA_id " +
+                     "ORDER BY rate DESC LIMIT ?";
+        List<Film> filmList = jdbcTemplate.query(sql, (rs, rowNum) -> mapperFilm(rs), count);
+        return filmList;
     }
 
     @Override
     public Film getFilmById(long id) {
-        String sql = "SELECT *, fr.MPA_name " +
-                "FROM film f " +
-                "LEFT JOIN film_rating fr ON f.MPA_id = fr.MPA_id " +
-                "WHERE film_id = ?";
-        return jdbcTemplate.query(sql, (rs, rowNum) -> mapperFilms(rs), id).
-                stream().findAny().orElseThrow(() -> new NotFoundException("Фильм с id " + id + " не найден."));
+        Map<Long,List<Genre>> genres = new HashMap<>();
+        String sql1 = "SELECT *,fg.film_id " +
+                      "FROM genre g " +
+                      "LEFT JOIN film_genre fg ON g.genre_id = fg.genre_id " +
+                      "WHERE film_id=?";
+        jdbcTemplate.query(sql1,((rs,rowNum) -> mapperGenre(rs,genres)),id);
+        String sql2 = "SELECT *,fr.MPA_name FROM film f " +
+                      "LEFT JOIN film_rating fr ON f.MPA_id = fr.MPA_id" +
+                     " WHERE film_id=?";
+        return jdbcTemplate.query(sql2, ((rs, rowNum) -> mapperFilms(rs,genres)), id).stream().findAny().
+                orElseThrow(() -> new NotFoundException("Фильм с id: " + id + " не найден."));
 
     }
 
@@ -124,7 +132,6 @@ public class FilmDbStorage implements FilmStorage {
                 ps.setInt(1, genres.get(i).getId());
                 ps.setLong(2, film.getId());
             }
-
             public int getBatchSize() {
                 return genres.size();
             }
@@ -139,7 +146,7 @@ public class FilmDbStorage implements FilmStorage {
         return jdbcTemplate.query(sql, (rs, rowNum) -> mappGenre(rs), idFilm);
     }
 
-    private Film mapperFilms(ResultSet rs) throws SQLException {
+   private Film mapperFilm(ResultSet rs) throws SQLException {
 
         Film film = new Film();
         film.setId(rs.getLong("film_id"));
@@ -151,6 +158,21 @@ public class FilmDbStorage implements FilmStorage {
         MPA mpa = mappMPA(rs);
         film.setMPA(mpa);
         film.setGenres(getGenreByIdFilms(rs.getLong("film_id")));
+        return film;
+    }
+
+    private Film mapperFilms(ResultSet rs,Map<Long,List<Genre>> genresAllFilms) throws SQLException {
+        Film film = new Film();
+        film.setId(rs.getLong("film_id"));
+        film.setName(rs.getString("film_name"));
+        film.setReleaseDate(rs.getDate("release_date").toLocalDate());
+        film.setDescription(rs.getString("description"));
+        film.setDuration(rs.getInt("duration"));
+        film.setRate(rs.getInt("rate"));
+        MPA mpa = mappMPA(rs);
+        film.setMPA(mpa);
+        List<Genre> listGenre = genresAllFilms.getOrDefault(rs.getLong("film_id"),new ArrayList<>());
+        film.setGenres(listGenre);
         return film;
     }
 
@@ -166,6 +188,13 @@ public class FilmDbStorage implements FilmStorage {
         genre.setId(rs.getInt("genre_id"));
         genre.setName(rs.getString("genre_name"));
         return genre;
+    }
+    private Map<Long,List<Genre>> mapperGenre(ResultSet rs,Map<Long,List<Genre>> genresListByFilm) throws SQLException {
+        final long film_id = rs.getLong("film_id");
+        List<Genre> genres = genresListByFilm.getOrDefault(film_id, new ArrayList<>());
+        genres.add(mappGenre(rs));
+        genresListByFilm.put(film_id,genres);
+        return genresListByFilm;
     }
 }
 
