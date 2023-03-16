@@ -17,6 +17,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Component
 public class FilmDbStorage implements FilmStorage {
@@ -80,10 +81,18 @@ public class FilmDbStorage implements FilmStorage {
     public List<Film> getPopularFilm(int count) {
         Map<Long,List<Genre>> genresListByFilm = new HashMap<>();
         String sql = "SELECT *, fr.MPA_name " +
-                     "FROM film f " +
-                     "LEFT JOIN film_rating AS fr ON f.MPA_id = fr.MPA_id " +
-                     "ORDER BY rate DESC LIMIT ?";
+                "FROM film f " +
+                "LEFT JOIN film_rating AS fr ON f.MPA_id = fr.MPA_id " +
+                "ORDER BY rate DESC LIMIT ?";
         List<Film> filmList = jdbcTemplate.query(sql, (rs, rowNum) -> mapperFilms(rs,genresListByFilm), count);
+        String sql1 ="SELECT *,fg.film_id FROM genre g " +
+                "LEFT JOIN film_genre fg ON g.genre_id = fg.genre_id" +
+                " WHERE fg.film_id " +
+                "IN (SELECT f.film_id FROM film f " +
+                "LEFT JOIN film_rating AS fr ON f.MPA_id = fr.MPA_id " +
+                "ORDER BY rate DESC LIMIT ?)";
+        jdbcTemplate.query(sql1,((rs,rowNum) -> mapperGenre(rs,genresListByFilm)),count);
+        filmList.forEach(film -> film.setGenres(genresListByFilm.getOrDefault(film.getId(),new ArrayList<>())));
         return filmList;
     }
 
