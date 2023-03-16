@@ -86,11 +86,11 @@ public class FilmDbStorage implements FilmStorage {
                 "ORDER BY rate DESC LIMIT ?";
         List<Film> filmList = jdbcTemplate.query(sql, (rs, rowNum) -> mapperFilms(rs,genresListByFilm), count);
         String sql1 ="SELECT *,fg.film_id FROM genre g " +
-                "LEFT JOIN film_genre fg ON g.genre_id = fg.genre_id" +
-                " WHERE fg.film_id " +
-                "IN (SELECT f.film_id FROM film f " +
-                "LEFT JOIN film_rating AS fr ON f.MPA_id = fr.MPA_id " +
-                "ORDER BY rate DESC LIMIT ?)";
+                   "LEFT JOIN film_genre fg ON g.genre_id = fg.genre_id" +
+                  " WHERE fg.film_id " +
+                  "IN (SELECT f.film_id FROM film f " +
+                  "LEFT JOIN film_rating AS fr ON f.MPA_id = fr.MPA_id " +
+                   "ORDER BY rate DESC LIMIT ?)";
         jdbcTemplate.query(sql1,((rs,rowNum) -> mapperGenre(rs,genresListByFilm)),count);
         filmList.forEach(film -> film.setGenres(genresListByFilm.getOrDefault(film.getId(),new ArrayList<>())));
         return filmList;
