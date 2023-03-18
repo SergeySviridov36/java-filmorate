@@ -4,6 +4,7 @@ import lombok.*;
 
 import javax.validation.constraints.*;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter
@@ -23,7 +24,7 @@ public class Film {
     @Positive
     private int duration;
     private int rate;
-    private List<Genre> genres;
+    private List<Genre> genres = new ArrayList<>();
     private MPA MPA;
 
 }

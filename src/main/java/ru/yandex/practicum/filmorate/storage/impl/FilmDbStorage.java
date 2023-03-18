@@ -69,12 +69,16 @@ public class FilmDbStorage implements FilmStorage {
     @Override
     public List<Film> getListFilms() {
         Map<Long,List<Genre>> genresListByFilm = new HashMap<>();
+        String sql2 = "SELECT *,fr.MPA_name FROM film f " +
+                "LEFT JOIN film_rating fr ON f.MPA_id = fr.MPA_id";
+        List<Film> filmList = jdbcTemplate.query(sql2, ((rs, rowNum) -> mapperFilms(rs)));
+        if (filmList.isEmpty()){
+            return filmList;
+        }
         String sql1 ="SELECT *,fg.film_id FROM genre g " +
                      "LEFT JOIN film_genre fg ON g.genre_id = fg.genre_id";
-        jdbcTemplate.query(sql1,((rs,rowNum) -> mapperGenre(rs,genresListByFilm)));
-        String sql2 = "SELECT *,fr.MPA_name FROM film f " +
-                      "LEFT JOIN film_rating fr ON f.MPA_id = fr.MPA_id";
-        return jdbcTemplate.query(sql2, ((rs, rowNum) -> mapperFilms(rs,genresListByFilm)));
+        jdbcTemplate.query(sql1,((rs,rowNum) -> mapperGenre(rs,filmList,genresListByFilm)));
+       return filmList;
     }
 
     @Override
@@ -84,32 +88,33 @@ public class FilmDbStorage implements FilmStorage {
                 "FROM film f " +
                 "LEFT JOIN film_rating AS fr ON f.MPA_id = fr.MPA_id " +
                 "ORDER BY rate DESC LIMIT ?";
-        List<Film> filmList = jdbcTemplate.query(sql, (rs, rowNum) -> mapperFilms(rs,genresListByFilm), count);
+        List<Film> filmList = jdbcTemplate.query(sql, (rs, rowNum) -> mapperFilms(rs), count);
+        if (filmList.isEmpty()){
+            return filmList;
+        }
         String sql1 ="SELECT *,fg.film_id FROM genre g " +
-                   "LEFT JOIN film_genre fg ON g.genre_id = fg.genre_id" +
-                  " WHERE fg.film_id " +
-                  "IN (SELECT f.film_id FROM film f " +
-                  "LEFT JOIN film_rating AS fr ON f.MPA_id = fr.MPA_id " +
-                   "ORDER BY rate DESC LIMIT ?)";
-        jdbcTemplate.query(sql1,((rs,rowNum) -> mapperGenre(rs,genresListByFilm)),count);
-        filmList.forEach(film -> film.setGenres(genresListByFilm.getOrDefault(film.getId(),new ArrayList<>())));
+                "LEFT JOIN film_genre fg ON g.genre_id = fg.genre_id" +
+                " WHERE fg.film_id " +
+                "IN (" + filmList.stream().map(e -> String.valueOf(e.getId())).collect(Collectors.joining(", ")) + ")";
+        jdbcTemplate.query(sql1,((rs,rowNum) -> mapperGenre(rs,filmList,genresListByFilm)));
         return filmList;
     }
 
     @Override
     public Film getFilmById(long id) {
-        Map<Long,List<Genre>> genres = new HashMap<>();
+        List<Genre> genres = new ArrayList<>();
+
+        String sql2 = "SELECT *,fr.MPA_name FROM film f " +
+                "LEFT JOIN film_rating fr ON f.MPA_id = fr.MPA_id" +
+                " WHERE film_id=?";
+       Film film = jdbcTemplate.query(sql2, ((rs, rowNum) -> mapperFilms(rs)), id).stream().findAny().
+                orElseThrow(() -> new NotFoundException("Фильм с id: " + id + " не найден."));
         String sql1 = "SELECT *,fg.film_id " +
                       "FROM genre g " +
                       "LEFT JOIN film_genre fg ON g.genre_id = fg.genre_id " +
                       "WHERE film_id=?";
-        jdbcTemplate.query(sql1,((rs,rowNum) -> mapperGenre(rs,genres)),id);
-        String sql2 = "SELECT *,fr.MPA_name FROM film f " +
-                      "LEFT JOIN film_rating fr ON f.MPA_id = fr.MPA_id" +
-                     " WHERE film_id=?";
-        return jdbcTemplate.query(sql2, ((rs, rowNum) -> mapperFilms(rs,genres)), id).stream().findAny().
-                orElseThrow(() -> new NotFoundException("Фильм с id: " + id + " не найден."));
-
+        jdbcTemplate.query(sql1,((rs,rowNum) -> mapperGenresByIdFilm(rs,film,genres)),id);
+    return film;
     }
 
     @Override
@@ -148,7 +153,7 @@ public class FilmDbStorage implements FilmStorage {
         });
     }
 
-    private Film mapperFilms(ResultSet rs,Map<Long,List<Genre>> genresAllFilms) throws SQLException {
+    private Film mapperFilms(ResultSet rs) throws SQLException {
         Film film = new Film();
         film.setId(rs.getLong("film_id"));
         film.setName(rs.getString("film_name"));
@@ -158,8 +163,6 @@ public class FilmDbStorage implements FilmStorage {
         film.setRate(rs.getInt("rate"));
         MPA mpa = mappMPA(rs);
         film.setMPA(mpa);
-        List<Genre> listGenre = genresAllFilms.getOrDefault(rs.getLong("film_id"),new ArrayList<>());
-        film.setGenres(listGenre);
         return film;
     }
 
@@ -176,12 +179,19 @@ public class FilmDbStorage implements FilmStorage {
         genre.setName(rs.getString("genre_name"));
         return genre;
     }
-    private Map<Long,List<Genre>> mapperGenre(ResultSet rs,Map<Long,List<Genre>> genresListByFilm) throws SQLException {
+    private List<Film> mapperGenre(ResultSet rs,List<Film>films,Map<Long,List<Genre>> genresListByFilm) throws SQLException {
         final long film_id = rs.getLong("film_id");
         List<Genre> genres = genresListByFilm.getOrDefault(film_id, new ArrayList<>());
         genres.add(mappGenre(rs));
         genresListByFilm.put(film_id,genres);
-        return genresListByFilm;
+        films.forEach(film -> film.setGenres(genresListByFilm.getOrDefault(film.getId(),new ArrayList<>())));
+        return films;
+    }
+
+    private Film mapperGenresByIdFilm(ResultSet rs, Film film, List<Genre> genres) throws SQLException {
+        genres.add(mappGenre(rs));
+        film.setGenres(genres);
+        return film;
     }
 }
 
