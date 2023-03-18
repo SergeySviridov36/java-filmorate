@@ -4,8 +4,8 @@ import lombok.*;
 
 import javax.validation.constraints.*;
 import java.time.LocalDate;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -15,7 +15,6 @@ import java.util.Set;
 public class Film {
 
     private long id;
-    private Set<Long> likes = new HashSet<>();
     @NotBlank
     private String name;
     @NotBlank
@@ -24,5 +23,9 @@ public class Film {
     private LocalDate releaseDate;
     @Positive
     private int duration;
+    private int rate;
+    private List<Genre> genres = new ArrayList<>();
+    private MPA MPA;
 
 }
+

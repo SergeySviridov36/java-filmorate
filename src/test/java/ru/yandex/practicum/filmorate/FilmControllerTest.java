@@ -1,14 +1,16 @@
 package ru.yandex.practicum.filmorate;
 
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.jdbc.core.JdbcTemplate;
 import ru.yandex.practicum.filmorate.controller.FilmController;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
-import ru.yandex.practicum.filmorate.storage.FilmStorage;
-import ru.yandex.practicum.filmorate.storage.InMemoryFilmStorage;
+import ru.yandex.practicum.filmorate.storage.*;
+import ru.yandex.practicum.filmorate.storage.impl.FilmDbStorage;
+import ru.yandex.practicum.filmorate.storage.impl.GenreDbStorage;
+import ru.yandex.practicum.filmorate.storage.impl.MPADbStorage;
 
 import javax.validation.ValidationException;
 import java.time.LocalDate;
@@ -23,10 +25,17 @@ public class FilmControllerTest {
     private FilmStorage storage;
     private FilmService service;
 
+    private  MPAStorage MPADbStorage;
+
+    private  GenreStorage genreDbStorage;
+    private JdbcTemplate jdbcTemplate = new JdbcTemplate();
+
     @BeforeEach
     public void createFilmAndController() {
-        storage = new InMemoryFilmStorage();
-        service = new FilmService(storage);
+        genreDbStorage = new GenreDbStorage(jdbcTemplate);
+        MPADbStorage= new MPADbStorage(jdbcTemplate);
+        storage = new FilmDbStorage(jdbcTemplate);
+        service = new FilmService(MPADbStorage,genreDbStorage,storage);
         controller = new FilmController(service);
         film = new Film();
         film.setName("The Machinist");
@@ -47,7 +56,7 @@ public class FilmControllerTest {
     public void shouldValidateFilmFail() {
         LocalDate localDate = LocalDate.of(1800, 12, 20);
         film.setReleaseDate(localDate);
-        Exception exception = assertThrows(ValidationException.class, ()->service.validateFilm(film));
+        Exception exception = assertThrows(ValidationException.class, () -> service.validateFilm(film));
 
         Assertions.assertEquals("Ошибка валидации getReleaseDate", exception.getMessage());
     }

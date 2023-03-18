@@ -6,18 +6,18 @@ import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Past;
 import java.time.LocalDate;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 @Setter
 @Getter
-@EqualsAndHashCode
+@EqualsAndHashCode(callSuper = false)
 @AllArgsConstructor
 @NoArgsConstructor
 public class User {
 
-    private long id;
-    private Set<Long> friends = new HashSet<>();
+    private Long id;
+    private List<User> friends = new ArrayList<>();
     @NotBlank
     @Email
     private String email;
@@ -26,4 +26,5 @@ public class User {
     private String name;
     @Past
     private LocalDate birthday;
+
 }

@@ -2,18 +2,21 @@ package ru.yandex.practicum.filmorate.storage;
 
 import ru.yandex.practicum.filmorate.model.Film;
 
-import java.util.ArrayList;
+import java.util.List;
 
 public interface FilmStorage {
-
-    void generatorId(Film film);
 
     Film save(Film film);
 
     Film update(Film film);
 
-    ArrayList<Film> getAllFilms();
+    List<Film> getListFilms();
 
-    Film getThisFilm(long id);
+    List<Film> getPopularFilm(int count);
 
+    Film getFilmById(long id);
+
+    void createLikes(long idFilm, long idUser);
+
+    void deleteLikesToFilm(long idUser, long idFilm);
 }
